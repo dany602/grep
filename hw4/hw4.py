@@ -1,3 +1,4 @@
+from PIL import Image
 from flask import Flask, render_template, url_for
 from flask_bootstrap import Bootstrap5
 import random
@@ -6,10 +7,10 @@ from image_info import image_info  # Assuming this contains the list of images
 app = Flask(__name__)
 bootstrap = Bootstrap5(app)
 
-def open_image(image_info):
-    with open(image_info, "rb") as f:
-        img_data = f.read()
-    return img_data
+# def open_image(image_info):
+#     with open(image_info, "rb") as x:
+#         img_data = x.read()
+#     return img_data
 
 @app.route('/')
 def home():
@@ -17,10 +18,26 @@ def home():
     selected_images = image_info[:3]  # Select the first three images after shuffling
     return render_template('index.html', images=selected_images)
    
-@app.route('/detail/<image>')
-def detail(image):
-    image_info = open_image(image)
-    return render_template('detail.html', image_data=image_info)
+@app.route('/detail/<image_id>')
+def detail(image_id):
+    # Find the image by ID
+    image = next((item for item in image_info if item["id"] == image_id), None)
+    if image:
+        # Open the image using Pillow to get additional info
+        img = Image.open(f"static/images/{image['id']}.jpg")
+        image_data = {
+            "title": image['title'],
+            "author": image['flickr_user'],
+            "id": image['id'],
+            "mode": img.mode,
+            "format": img.format,
+            "width": img.width,
+            "height": img.height,
+            "url": image['url']  # Assuming 'url' is the path to the image file
+        }
+        return render_template('details.html', image=image_data)
+    else:
+        return "Image not found", 404
  
 if __name__ == "__main__":
     app.run(debug=True)
